@@ -8,7 +8,6 @@ end library;
 
 define module pregnancy
   use common-dylan;
-  use format-out;
   use simple-io;
   use file-system;
   use streams;

@@ -1,47 +1,61 @@
 module: pregnancy
-synopsis: prints the total number of pregnancies
+synopsis: deals with the pregnancy survey cohort data set
 author: kevin birch <kevin.birch@gmail.com>
 
+define constant *male* = #"male";
+define constant *female* = #"female";
+
+define constant <gender> = type-union(singleton(*male*), singleton(*female*));
+
 define class <pregnancy> (<object>)
-  slot case-id :: <integer>;
-  // xxx - how can we have an enumeration?
-  slot sex :: <integer>;
-  slot pregnancy-weeks :: <integer>;
-  slot live-birth?;
-  slot birth-ordinal :: <integer>;
-  slot statistical-weight;
+  slot case-id :: <integer>, required-init-keyword: case-id:;
+  slot gender :: false-or(<gender>) = #f;
+  slot weeks :: <integer>;
+  //slot live-birth?;
+  //slot birth-ordinal :: <integer>;
+  //slot statistical-weighting;
 end class;
 
-define method print-message(value :: <pregnancy>, stream :: <stream>) => ()
-  format(stream, "{case-id: %s, duration: %s}", value.case-id, value.pregnancy-weeks);
-end;
-
-define function number-of-pregnancies(file-name :: <pathname>)
-
+define method load-data-set(file-name :: <pathname>) => records :: <list>;
   let records = list();
   with-open-file(file-stream = file-name)
     while (~stream-at-end?(file-stream))
-      records := parse-record(read-line(file-stream), records);
+        records := add!(records, parse-record(read-line(file-stream)));
     end;
   end;
+  
+  records;
+end;
 
-  format-out("I'm pregnant!\n");
-  format-out("loaded %d records\n", size(records));
-  do (method (a) format-out("{case-id: %s, duration: %s}\n", a.case-id, a.pregnancy-weeks) end, records);
-end function number-of-pregnancies;
+define method parse-record(line :: <string>) => record :: <pregnancy>;
+  let record = make(<pregnancy>, case-id: string-to-integer(copy-sequence(line, start: 0, end: 12)));
 
-define function parse-record(line :: <string>, records :: <list>)
-  => records :: <list>;
+  record.gender := 
+    select(string-to-integer(copy-sequence(line, start: 55, end: 56), default: 0))
+      1 => *male*;
+      2 => *female*;
+      otherwise => #f;
+    end;
 
-  let record = make(<pregnancy>);
   // xxx - how can we make a macro to do the stoi and subseq stuff?
-  record.case-id := string-to-integer(copy-sequence(line, start: 0, end: 12));
-  // awk the file to see if there are nulls for this field...
-  //record.sex := string-to-integer(copy-sequence(line, start: 55, end: 56));
-  record.pregnancy-weeks := string-to-integer(copy-sequence(line, start: 274, end: 276));
+  record.weeks := string-to-integer(copy-sequence(line, start: 274, end: 276));
+  
+  record;
+end;
 
-  add!(records, record);
-end function parse-record;
+define method number-of-pregnancies(records :: <list>)
+  format-out("loaded %d records\n", size(records));
+end;
+
+define method number-missing-gender(records :: <list>)
+  format-out("%d records missing gender\n", size(choose(method(a) a.gender = #f end, records)));
+end;
+
+define method main(application-name :: <string>, arguments :: <simple-object-vector>)
+  let records = load-data-set(first(arguments));
+  number-of-pregnancies(records);
+  number-missing-gender(records);
+end;
 
 // Invoke our main() function.
-number-of-pregnancies(first(application-arguments()));
+main(application-name(), application-arguments());
