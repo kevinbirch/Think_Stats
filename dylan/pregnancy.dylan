@@ -57,5 +57,4 @@ define method main(application-name :: <string>, arguments :: <simple-object-vec
   number-missing-gender(records);
 end;
 
-// Invoke our main() function.
 main(application-name(), application-arguments());
