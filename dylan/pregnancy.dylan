@@ -2,10 +2,10 @@ module: pregnancy
 synopsis: deals with the pregnancy survey cohort data set
 author: kevin birch <kevin.birch@gmail.com>
 
-define constant *male* = #"male";
-define constant *female* = #"female";
+define constant $male = #"male";
+define constant $female = #"female";
 
-define constant <gender> = type-union(singleton(*male*), singleton(*female*));
+define constant <gender> = type-union(singleton($male), singleton($female));
 
 define class <pregnancy> (<object>)
   slot case-id :: <integer>, required-init-keyword: case-id:;
@@ -32,8 +32,8 @@ define method parse-record(line :: <string>) => record :: <pregnancy>;
 
   record.gender := 
     select(string-to-integer(copy-sequence(line, start: 55, end: 56), default: 0))
-      1 => *male*;
-      2 => *female*;
+      1 => $male;
+      2 => $female;
       otherwise => #f;
     end;
 
